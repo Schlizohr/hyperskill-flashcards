@@ -24,9 +24,21 @@ public class FlashCard {
         return definition;
     }
 
+    public void setDefinition(String definition) {
+        this.definition = definition;
+    }
+
     @Override
     public String toString() {
         return "Card:\n" + term + '\n' +
                 "Definition:\n" + definition + '\n';
+    }
+
+    public String toPair() {
+        return "(\"" + term + "\":\"" + definition + "\")";
+    }
+
+    public String export() {
+        return term + "\n" + definition;
     }
 }
