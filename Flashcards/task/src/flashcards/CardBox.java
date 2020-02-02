@@ -14,10 +14,19 @@ public class CardBox {
         return cards;
     }
 
-    public FlashCard createAndStoreCard(String term, String definition) {
+    public void createAndStoreCard(String term, String definition) {
         FlashCard card = new FlashCard(term, definition);
-        cards.add(card);
-        return card;
+        if (termDoesNotExist(card.getTerm())) {
+            cards.add(card);
+        }
+    }
+
+    public boolean termDoesNotExist(String term) {
+        return cards.stream().noneMatch(c -> c.getTerm().equals(term));
+    }
+
+    public boolean definitionDoesNotExist(String definition) {
+        return cards.stream().noneMatch(c -> c.getDefinition().equals(definition));
     }
 
     public void addCard(FlashCard flashCard) {
