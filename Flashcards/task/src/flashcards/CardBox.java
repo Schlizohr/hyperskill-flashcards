@@ -1,15 +1,16 @@
 package flashcards;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 public class CardBox {
-    private List<FlashCard> cards;
+    private static List<FlashCard> cards = new LinkedList<>();
+    ;
 
     public CardBox() {
-        cards = new LinkedList<>();
     }
 
     public List<FlashCard> getCards() {
@@ -46,11 +47,15 @@ public class CardBox {
                 (c1) -> c1.setDefinition(definition), () -> cards.add(new FlashCard(term, definition)));
     }
 
-    public void addCard(FlashCard flashCard) {
-        cards.add(flashCard);
+    public List<FlashCard> getHardestCard() {
+        try {
+            return cards.stream().filter(c -> c.getErrors() == cards.stream().max(Comparator.comparingInt(FlashCard::getErrors)).get().getErrors()).filter(c -> c.getErrors() > 0).collect(Collectors.toList());
+        } catch (Error e) {
+            return new LinkedList<>();
+        }
     }
 
-    public void setCards(List<FlashCard> cards) {
-        this.cards = cards;
+    public void resetStats() {
+        cards.forEach(FlashCard::resetErrors);
     }
 }

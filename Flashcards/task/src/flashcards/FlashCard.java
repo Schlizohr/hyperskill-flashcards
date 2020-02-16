@@ -3,6 +3,7 @@ package flashcards;
 public class FlashCard {
     private String term;
     private String definition;
+    private int errors = 0;
 
     public FlashCard(String term, String definition) {
         this.term = term;
@@ -13,7 +14,9 @@ public class FlashCard {
     }
 
     public boolean validateAnswer(String answer){
-        return definition.equals(answer);
+        boolean equals = definition.equals(answer);
+        if (!equals) errors++;
+        return equals;
     }
 
     public String getTerm() {
@@ -26,6 +29,18 @@ public class FlashCard {
 
     public void setDefinition(String definition) {
         this.definition = definition;
+    }
+
+    public void setTerm(String term) {
+        this.term = term;
+    }
+
+    public int getErrors() {
+        return errors;
+    }
+
+    public void resetErrors() {
+        this.errors = 0;
     }
 
     @Override

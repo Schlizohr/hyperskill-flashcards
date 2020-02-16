@@ -4,27 +4,29 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class Main {
 
-    private static Scanner scanner = new Scanner(System.in);
+    private Scanner scanner = new Scanner(System.in);
     private CardBox cardBox = new CardBox();
+    private List<String> log = new LinkedList<>();
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) {
         new Main().runGame();
-
-
     }
 
     private void runGame() {
         boolean run = true;
         while (run) {
-            System.out.println("Input the action (add, remove, import, export, ask, exit):");
+            write("Input the action (add, remove, import, export, ask, log, hardest card, exit):");
             try {
-                switch (Actions.valueOf(scanner.nextLine().trim().toUpperCase())) {
+                switch (Actions.valueOf(readLine().trim().replace(" ", "_").toUpperCase())) {
                     case ADD:
                         createCard();
                         break;
@@ -40,61 +42,62 @@ public class Main {
                     case EXPORT:
                         exportCards();
                         break;
+                    case LOG:
+                        log();
+                        break;
+                    case HARDEST_CARD:
+                        hardestCard();
+                        break;
+                    case RESET_STATS:
+                        cardBox.resetStats();
+                        write("Card statistics has been reset");
+                        break;
                     case EXIT:
                         run = false;
-                        System.out.println("Bye, bye!");
+                        write("Bye, bye!");
                         break;
                 }
             } catch (FileNotFoundException e) {
-                System.out.println("File not found.");
+                write("File not found.");
             }
         }
     }
 
-    private void createCards() {
-        System.out.println("Input the number of cards:");
-        int numberOfCards = scanner.nextInt();
-        scanner.nextLine();
-        for (int i = 1; i <= numberOfCards; i++) {
-            createCard();
-        }
-    }
-
     private void createCard() {
-        System.out.println("The card:");
+        write("The card:");
         String term = askForTerm();
         if (term == null) return;
-        System.out.println("The definition of the card:");
+        write("The definition of the card:");
         String def = askForDefinition();
         if (def == null) return;
         FlashCard card = cardBox.createAndStoreCard(term, def);
-        System.out.println("The pair " + card.toPair() + " has been added.");
+        write("The pair " + card.toPair() + " has been added.");
     }
 
     private void removeCard() {
-        System.out.println("The card:");
-        String term = scanner.nextLine().trim();
+        write("The card:");
+        String term = readLine().trim();
         if (cardBox.removeCard(term)) {
-            System.out.println("The card has been removed.");
+            write("The card has been removed.");
         } else {
-            System.out.println("Can't remove \"" + term + "\": there is no such card.");
+            write("Can't remove \"" + term + "\": there is no such card.");
         }
 
     }
 
     private String askForTerm() {
-        String term = scanner.nextLine().trim();
+        String term = readLine().trim();
         if (!cardBox.termDoesNotExist(term)) {
-            System.out.println("The card \"" + term + "\" already exists. Try again:");
+            write("The card \"" + term + "\" already exists. Try again:");
             return null;
         }
         return term;
     }
 
     private String askForDefinition() {
-        String def = scanner.nextLine().trim();
+        String def = readLine().trim();
         if (!cardBox.definitionDoesNotExist(def)) {
-            System.out.println("The definition \"" + def + "\" already exists");
+            write("The definition \"" + def + "\" already exists");
             return null;
         }
         return def;
@@ -107,47 +110,84 @@ public class Main {
     }
 
     private void askCards() {
-        System.out.println("How many times to ask?");
+        write("How many times to ask?");
         int numberOfQuestions = scanner.nextInt();
-        scanner.nextLine();
+        readLine();
         for (int i = 0; i < numberOfQuestions; i++) {
             askCard(cardBox.getRandomCard());
         }
     }
 
     private void askCard(FlashCard card) {
-        System.out.println("Print the definition of \"" + card.getTerm() + "\":");
-        String answer = scanner.nextLine().trim();
+        write("Print the definition of \"" + card.getTerm() + "\":");
+        String answer = readLine().trim();
         if (card.validateAnswer(answer)) {
-            System.out.println("Correct answer");
+            write("Correct answer");
         } else {
             String s = "`Wrong answer`, `The correct one is \"" + card.getDefinition() + "\"`,";
-            List<FlashCard> collect = cardBox.getCards().stream().filter(c -> c.validateAnswer(answer) && !c.getTerm().equals(card.getTerm())).collect(Collectors.toList());
+            List<FlashCard> collect = cardBox.getCards().stream().filter(c -> c.getDefinition().equals(answer) && !c.getTerm().equals(card.getTerm())).collect(Collectors.toList());
             if (collect.size() > 0) {
                 s += " you've just written the definition of \"" + collect.get(0).getTerm() + "\"";
             }
-            System.out.println(s);
+            write(s);
         }
     }
 
     private void importCards() throws FileNotFoundException {
-        System.out.println("import");
-        Scanner reader = new Scanner(new FileReader(scanner.nextLine().trim()));
+        write("import");
+        Scanner reader = new Scanner(new FileReader(readLine().trim()));
         int i = 0;
         while (reader.hasNextLine()) {
             cardBox.updateCards(reader.nextLine().trim(), reader.nextLine().trim());
             i++;
         }
-        System.out.println("" + i + " cards have been loaded.");
+        write("" + i + " cards have been loaded.");
     }
 
     private void exportCards() throws FileNotFoundException {
-        System.out.println("File name:");
-        PrintWriter printWriter = new PrintWriter(new File(scanner.nextLine()));
+        write("File name:");
+        PrintWriter printWriter = new PrintWriter(new File(readLine()));
         List<FlashCard> cards = cardBox.getCards();
         cards.forEach(c -> printWriter.println(c.export()));
-        System.out.println("" + cards.size() + " cards have been saved.");
+        write("" + cards.size() + " cards have been saved.");
         printWriter.flush();
         printWriter.close();
+    }
+
+    private void hardestCard() {
+        List<FlashCard> hardestCard = cardBox.getHardestCard();
+        if (hardestCard.size() == 0) {
+            write("There are no cards with errors.");
+        } else if (hardestCard.size() == 1) {
+            FlashCard flashCard = hardestCard.get(0);
+            write("The hardest card is \"" + flashCard.getTerm() + "\". You have " + flashCard.getErrors()
+                    + " errors answering them.");
+        } else {
+            FlashCard flashCard = hardestCard.get(0);
+            write("The hardest cards are \"" + hardestCard.stream().map(FlashCard::getTerm)
+                    .collect(Collectors.joining("\", \"")) + "\". You have " + flashCard.getErrors()
+                    + " errors answering them.");
+        }
+    }
+
+    private void log() throws FileNotFoundException {
+        PrintWriter printWriter = new PrintWriter(new File(readLine().trim()));
+        log.forEach(printWriter::println);
+        printWriter.flush();
+        write("yolo\nLog has been saved.");
+        log.clear();
+    }
+
+
+    private String readLine() {
+        String s = scanner.nextLine();
+        log.add(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE) + ": " + s);
+        return s;
+    }
+
+    private void write(String s) {
+        String format = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + ": " + s;
+        log.add(format);
+        System.out.println(format);
     }
 }
