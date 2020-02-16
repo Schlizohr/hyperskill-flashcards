@@ -16,9 +16,38 @@ public class Main {
     private Scanner scanner = new Scanner(System.in);
     private CardBox cardBox = new CardBox();
     private List<String> log = new LinkedList<>();
+    private String input;
+    private String output;
 
     public static void main(String[] args) {
-        new Main().runGame();
+        new Main(args).runGame();
+    }
+
+    public Main(String[] args) {
+        if (args.length > 0) {
+            processArguments(args);
+            if (input != null) {
+                try {
+                    importCardsFromFile(input);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void processArguments(String[] args) {
+        switch (args.length) {
+            case 4:
+                extractFile(args[2], args[3]);
+            case 2:
+                extractFile(args[0], args[1]);
+        }
+    }
+
+    private void extractFile(String argument, String value) {
+        if (argument.contains("import")) input = value;
+        if (argument.contains("export")) output = value;
     }
 
     private void runGame() {
@@ -53,8 +82,9 @@ public class Main {
                         write("Card statistics has been reset");
                         break;
                     case EXIT:
-                        run = false;
                         write("Bye, bye!");
+                        if (output != null) exportCardsToFile(output);
+                        run = false;
                         break;
                 }
             } catch (FileNotFoundException e) {
@@ -135,18 +165,27 @@ public class Main {
 
     private void importCards() throws FileNotFoundException {
         write("import");
-        Scanner reader = new Scanner(new FileReader(readLine().trim()));
+        importCardsFromFile(readLine().trim());
+    }
+
+    private void importCardsFromFile(String file) throws FileNotFoundException {
+        Scanner reader = new Scanner(new FileReader(file));
         int i = 0;
         while (reader.hasNextLine()) {
             cardBox.updateCards(reader.nextLine().trim(), reader.nextLine().trim());
             i++;
         }
         write("" + i + " cards have been loaded.");
+
     }
 
     private void exportCards() throws FileNotFoundException {
         write("File name:");
-        PrintWriter printWriter = new PrintWriter(new File(readLine()));
+        exportCardsToFile(readLine().trim());
+    }
+
+    private void exportCardsToFile(String file) throws FileNotFoundException {
+        PrintWriter printWriter = new PrintWriter(new File(file));
         List<FlashCard> cards = cardBox.getCards();
         cards.forEach(c -> printWriter.println(c.export()));
         write("" + cards.size() + " cards have been saved.");
